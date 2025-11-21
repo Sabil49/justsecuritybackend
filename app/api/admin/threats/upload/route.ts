@@ -12,7 +12,7 @@ const ThreatUploadSchema = z.object({
     severity: z.enum(['critical', 'high', 'medium', 'low']),
     category: z.enum(['malware', 'spyware', 'adware', 'trojan', 'phishing']),
     description: z.string().optional(),
-    metadata: z.record(z.any()).optional(),
+    metadata: z.record(z.any(),z.unknown()).optional(),
   })).min(1).max(1000),
   version: z.number().int().positive(),
 });
