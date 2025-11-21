@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
           where: { signature: threat.signature },
           update: {
             threatName: threat.threatName,
-            severity: threat.severity,
+            severity: threat.severity as 'critical' | 'high' | 'medium' | 'low',
             category: threat.category,
             description: threat.description,
             metadata: threat.metadata as InputJsonValue,
