@@ -6,32 +6,6 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_TOKEN!,
 });
 
-// Lua script for atomic rate limiting
-const rateLimitScript = `
-local key = KEYS[1]
-local now = tonumber(ARGV[1])
-local window = tonumber(ARGV[2])
-local limit = tonumber(ARGV[3])
-local windowStart = now - (window * 1000)
-
--- Remove old entries
-redis.call('zremrangebyscore', key, 0, windowStart)
-
--- Count current requests
-local currentCount = redis.call('zcard', key)
-
-if currentCount >= limit then
-  return {0, 0}
-end
-
--- Add current request with unique member
-local member = now .. ':' .. redis.call('incr', key .. ':counter')
-redis.call('zadd', key, now, member)
-redis.call('expire', key, window)
-redis.call('expire', key .. ':counter', window)
-return {1, limit - currentCount - 1}
-`;
-
 export async function rateLimit(
   identifier: string,
   limit: number = 100,
@@ -39,15 +13,21 @@ export async function rateLimit(
 ): Promise<{ success: boolean; remaining: number }> {
   const key = `rate_limit:${identifier}`;
   const now = Date.now();
+  const windowStart = now - window * 1000;
 
-  const result = await redis.eval(
-    rateLimitScript,
-    [key],
-    [now, window, limit]
-  ) as [number, number];
+  // Remove old entries
+  await redis.zremrangebyscore(key, 0, windowStart);
 
-  return {
-    success: result[0] === 1,
-    remaining: result[1]
-  };
+  // Count current requests
+  const currentCount = await redis.zcard(key);
+
+  if (currentCount >= limit) {
+    return { success: false, remaining: 0 };
+  }
+
+  // Add current request
+  await redis.zadd(key, { score: now, member: `${now}` });
+  await redis.expire(key, window);
+
+  return { success: true, remaining: limit - currentCount - 1 };
 }

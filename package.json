@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.934.0",
@@ -29,7 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
     "postcss": "^8",
-    "prisma": "^7.0.0",
+    "prisma": "^6.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

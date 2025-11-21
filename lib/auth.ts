@@ -1,11 +1,9 @@
 // lib/auth.ts
 import { NextRequest } from 'next/server';
-import { verify, sign } from 'jsonwebtoken';
+import { verify,sign } from 'jsonwebtoken';
 import { z } from 'zod';
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required but not defined');
-}
+
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export interface AuthUser {
   userId: string;
@@ -13,12 +11,7 @@ export interface AuthUser {
   iat: number;
   exp: number;
 }
-const authUserSchema = z.object({
-  userId: z.string(),
-  email: z.string(),
-  iat: z.number(),
-  exp: z.number(),
-});
+
 export async function verifyAuth(request: NextRequest): Promise<AuthUser> {
   const authHeader = request.headers.get('authorization');
   
@@ -29,9 +22,8 @@ export async function verifyAuth(request: NextRequest): Promise<AuthUser> {
   const token = authHeader.substring(7);
   
   try {
-    const decoded = verify(token, JWT_SECRET!, { algorithms: ['HS256'] });
-    const validated = authUserSchema.parse(decoded);
-    return validated;
+    const decoded = verify(token, JWT_SECRET) as AuthUser;
+    return decoded;
   } catch (error) {
     throw new Error('Invalid or expired token');
   }
@@ -40,8 +32,8 @@ export async function verifyAuth(request: NextRequest): Promise<AuthUser> {
 export function createAuthToken(userId: string, email: string): string {
   const token = sign(
     { userId, email },
-    JWT_SECRET!,
-    { expiresIn: '7d', algorithm: 'HS256' }
+    JWT_SECRET,
+    { expiresIn: '7d' }
   );
   return token;
 }

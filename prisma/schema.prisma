@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 /* ===========================
@@ -51,7 +52,11 @@ enum CommandStatus {
   EXECUTED  @map("executed")
   FAILED    @map("failed")
 }
-
+enum AdminAction {
+  THREAT_UPLOAD    @map("threat_upload")
+  USER_BAN         @map("user_ban")
+  SIGNATURE_UPDATE @map("signature_update")
+}
 /* ===========================
    MODELS
    =========================== */
@@ -223,5 +228,19 @@ model TelemetryLog {
 
   @@index([userId])
   @@index([eventType])
+  @@index([timestamp])
+}
+
+model AdminAuditLog {
+  id         String      @id @default(cuid())
+  adminId    String
+  action     AdminAction
+  targetId   String?
+  metadata   Json?
+  ipAddress  String?
+  timestamp  DateTime    @default(now())
+
+  @@index([adminId])
+  @@index([action])
   @@index([timestamp])
 }
