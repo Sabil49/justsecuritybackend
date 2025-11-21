@@ -5,6 +5,7 @@ import { verifyAuth } from '@/lib/auth';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { InputJsonValue } from '@prisma/client/runtime/library';
+import { ThreatSeverity, ThreatCategory, ThreatType } from '@prisma/client';
 const ThreatUploadSchema = z.object({
   threats: z.array(z.object({
     type: z.enum(['hash', 'package', 'url', 'behavior']),
@@ -38,7 +39,6 @@ export async function POST(request: NextRequest) {
     const checksum = createHash('sha256')
       .update(JSON.stringify(validated.threats))
       .digest('hex');
-
     // Upsert threats
     const results = await Promise.allSettled(
       validated.threats.map(threat =>
@@ -46,21 +46,21 @@ export async function POST(request: NextRequest) {
           where: { signature: threat.signature },
           update: {
             threatName: threat.threatName,
-            severity: threat.severity as 'critical' | 'high' | 'medium' | 'low',
-            category: threat.category,
+            severity: threat.severity.toUpperCase() as unknown as ThreatSeverity,
+            category: threat.category.toUpperCase() as unknown as ThreatCategory,
             description: threat.description,
             metadata: threat.metadata as InputJsonValue,
             version: validated.version,
             isActive: true,
             updatedAt: new Date(),
-            type: threat.type,
+            type: threat.type.toUpperCase() as unknown as ThreatType,
           },
           create: {
-            type: threat.type,
+            type: threat.type.toUpperCase() as unknown as ThreatType,
             signature: threat.signature,
             threatName: threat.threatName,
-            severity: threat.severity,
-            category: threat.category,
+            severity: threat.severity.toUpperCase() as unknown as ThreatSeverity,
+            category: threat.category.toUpperCase() as unknown as ThreatCategory,
             description: threat.description,
             metadata: threat.metadata as InputJsonValue,
             version: validated.version,
@@ -74,20 +74,20 @@ export async function POST(request: NextRequest) {
     const failed = results.filter(r => r.status === 'rejected').length;
 
     // Log admin action
-    await prisma.adminAuditLog.create({
-      data: {
-        adminId: user.userId,
-        action: 'threat_upload',
-        metadata: {
-          version: validated.version,
-          checksum,
-          totalThreats: validated.threats.length,
-          successful,
-          failed,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-      },
-    });
+        await prisma.adminAuditLog.create({
+          data: {
+            adminId: user.userId,
+            action: 'THREAT_UPLOAD',
+            metadata: {
+              version: validated.version,
+              checksum,
+              totalThreats: validated.threats.length,
+              successful,
+              failed,
+            },
+            ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+          },
+        });
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,7 @@
 // prisma/seed.ts
-import { prisma } from "@/lib/prisma";
+import { PrismaClient, ThreatSeverity, ThreatCategory, ThreatType } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
@@ -10,6 +12,7 @@ async function main() {
       email: 'test@example.com',
       name: 'Test User',
       authProvider: 'google',
+      authProviderId: 'test-google-id',
     },
   });
 
@@ -29,22 +32,22 @@ async function main() {
 
   console.log(`Created device: ${device.deviceName}`);
 
-  // Create sample threat signatures
+  // Create sample threat signatures with ENUMS
   const threats = await prisma.threatSignature.createMany({
     data: [
       {
-        type: 'hash',
-        signature: 'a'.repeat(64), // Example SHA-256-like hex string
+        type: ThreatType.HASH,
+        signature: 'a'.repeat(64),
         threatName: 'Trojan.Android.Generic',
-        severity: 'critical',
-        category: 'trojan',
+        severity: ThreatSeverity.CRITICAL,
+        category: ThreatCategory.TROJAN,
       },
       {
-        type: 'package',
+        type: ThreatType.PACKAGE,
         signature: 'com.malicious.app',
         threatName: 'PUA.Android.Adware',
-        severity: 'medium',
-        category: 'adware',
+        severity: ThreatSeverity.MEDIUM,
+        category: ThreatCategory.ADWARE,
       },
     ],
   });
