@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Register push token if provided
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: typeof prisma) => {
   const existingToken = await tx.pushToken.findUnique({
     where: { token: validated.pushToken },
     include: { device: true }

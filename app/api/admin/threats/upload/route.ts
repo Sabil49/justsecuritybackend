@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { verifyAuth } from '@/lib/auth';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 const ThreatUploadSchema = z.object({
   threats: z.array(z.object({
     type: z.enum(['hash', 'package', 'url', 'behavior']),
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
             severity: threat.severity,
             category: threat.category,
             description: threat.description,
-            metadata: threat.metadata,
+            metadata: threat.metadata as InputJsonValue,
             version: validated.version,
             isActive: true,
             updatedAt: new Date(),
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
             severity: threat.severity,
             category: threat.category,
             description: threat.description,
-            metadata: threat.metadata,
+            metadata: threat.metadata as InputJsonValue,
             version: validated.version,
             isActive: true,
           },

@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { createAuthToken } from '@/lib/auth';
-import { create } from 'domain';
 
 
 
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Upsert user
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: typeof prisma) => {
   // Upsert user
   const existingUser = await tx.user.findUnique({
     where: { email }

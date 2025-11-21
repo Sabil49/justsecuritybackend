@@ -76,6 +76,13 @@ export async function POST(request: NextRequest) {
       uncachedHashes.push(...validated.hashes);
     }    // Query database for uncached hashes
     if (uncachedHashes.length > 0) {
+      type ThreatRow = {
+        signature: string;
+        threatName?: string | null;
+        severity?: string | null;
+        category?: string | null;
+      };
+
       const threats = await prisma.threatSignature.findMany({
         where: {
           signature: { in: uncachedHashes },
@@ -88,10 +95,10 @@ export async function POST(request: NextRequest) {
           severity: true,
           category: true,
         },
-      });
+      }) as ThreatRow[];
 
-      const threatMap = new Map(
-        threats.map(t => [t.signature, t])
+      const threatMap = new Map<string, ThreatRow>(
+        threats.map((t) => [t.signature, t])
       );
 
       for (const hash of uncachedHashes) {
@@ -100,9 +107,9 @@ export async function POST(request: NextRequest) {
           ? {
               hash,
               isThreat: true,
-              threatName: threat.threatName,
-              severity: threat.severity,
-              category: threat.category,
+              threatName: threat?.threatName ?? undefined,
+              severity: threat?.severity ?? undefined,
+              category: threat?.category ?? undefined,
             }
           : {
               hash,
@@ -111,8 +118,8 @@ export async function POST(request: NextRequest) {
 
         results.push(result);
 
-        // Cache result for 1 hour
-        await redis.setex(`threat:${hash}`, 3600, result);
+        // Cache result for 1 hour (store as JSON string)
+        await redis.setex(`threat:${hash}`, 3600, JSON.stringify(result));
       }
     }
 

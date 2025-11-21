@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { verifyAuth } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
-import { Prisma } from '@prisma/client';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 
 export const runtime = 'nodejs';
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         commandType: validated.commandType,
         status: 'pending',
         issuedBy: user.userId,
-        metadata: metadata as Prisma.InputJsonValue,
+        metadata: metadata as InputJsonValue,
       },
     });
 
