@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
           fileSize: 0, // Will be updated on upload
           fileHash: threat.fileHash,
           threatName: threat.threatName,
-          severity: threat.severity,
-          status: 'quarantined',
+          severity: threat.severity.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+          status: 'QUARANTINED',
         })),
       });
 

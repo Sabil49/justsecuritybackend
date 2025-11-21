@@ -50,19 +50,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Register push token if provided
-    await prisma.$transaction(async (tx: typeof prisma) => {
-  const existingToken = await tx.pushToken.findUnique({
-    where: { token: validated.pushToken },
-    include: { device: true }
-  });
+  // Register push token if provided
+  const pushToken = validated.pushToken;
+  if (pushToken) {
+    await prisma.$transaction(async (tx) => {
+      const existingToken = await tx.pushToken.findUnique({
+        where: { token: pushToken },
+        include: { device: true }
+      });
+      
+      if (existingToken && existingToken.device.userId !== user.userId) {
+        throw new Error('Push token belongs to another user');
+      }
   
-  if (existingToken && existingToken.device.userId !== user.userId) {
-    throw new Error('Push token belongs to another user');
-  }
-
       await tx.pushToken.upsert({
-        where: { token: validated.pushToken },
+        where: { token: pushToken },
         update: {
           deviceId: device.id,
           platform: validated.platform === 'ios' ? 'apns' : 'fcm',
@@ -70,12 +72,13 @@ export async function POST(request: NextRequest) {
         },
         create: {
           deviceId: device.id,
-          token: validated.pushToken!,
+          token: pushToken,
           platform: validated.platform === 'ios' ? 'apns' : 'fcm',
           isActive: true,
         },
       });
     });
+  }
     return NextResponse.json({
       success: true,
       data: { deviceId: device.id },

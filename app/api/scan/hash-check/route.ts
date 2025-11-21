@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       const threats = await prisma.threatSignature.findMany({
         where: {
           signature: { in: uncachedHashes },
-          type: 'hash',
+          type: 'HASH',
           isActive: true,
         },
         select: {

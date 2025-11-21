@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
     const command = await prisma.antiTheftCommand.create({
       data: {
         deviceId: device.id,
-        commandType: validated.commandType,
-        status: 'pending',
+        commandType: validated.commandType.toUpperCase() as any,
+        status: 'PENDING',
         issuedBy: user.userId,
         metadata: validated.metadata || {},
       },
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     if (successfulPushes > 0) {
       await prisma.antiTheftCommand.update({
         where: { id: command.id },
-        data: { status: 'sent' },
+        data: { status: 'SENT' },
       });
     }
 

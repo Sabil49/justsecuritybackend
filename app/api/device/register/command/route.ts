@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyAuth } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { InputJsonValue } from '@prisma/client/runtime/library';
+import type { AntiTheftCommandType } from '@prisma/client';
 
 export const runtime = 'nodejs';
 
@@ -74,23 +75,22 @@ export async function POST(request: NextRequest) {
 
     // Normalize metadata (safe for Prisma JSON)
     const metadata: Record<string, unknown> = validated.metadata ?? {};
-
     // Create pending command
     const command = await prisma.antiTheftCommand.create({
       data: {
         deviceId: device.id,
-        commandType: validated.commandType,
-        status: 'pending',
+        commandType: (validated.commandType.toUpperCase() as unknown) as AntiTheftCommandType,
+        status: 'PENDING',
         issuedBy: user.userId,
         metadata: metadata as InputJsonValue,
       },
     });
 
-    // Update to 'sent'
+    // Update to 'SENT'
     await prisma.antiTheftCommand.update({
       where: { id: command.id },
       data: {
-        status: 'sent',
+        status: 'SENT',
       },
     });
 

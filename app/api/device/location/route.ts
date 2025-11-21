@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       where: {
         id: validated.commandId,
         deviceId: device.id,
-        commandType: 'locate',
+        commandType: 'LOCATE',
       },
     });
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     await prisma.antiTheftCommand.update({
       where: { id: command.id },
       data: {
-        status: 'executed',
+        status: 'EXECUTED',
         executedAt: new Date(),
         metadata: {
           ...((command.metadata as any) || {}),
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         commandId: command.id,
-        status: 'executed',
+        status: 'EXECUTED',
       },
     });
   } catch (error) {

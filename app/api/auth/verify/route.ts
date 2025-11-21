@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Upsert user
-    const result = await prisma.$transaction(async (tx: typeof prisma) => {
+    const result = await prisma.$transaction(async (tx) => {
   // Upsert user
   const existingUser = await tx.user.findUnique({
     where: { email }
