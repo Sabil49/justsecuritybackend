@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
-import { platform } from 'process';
+import { randomUUID } from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
 
       const user = await tx.user.create({
         data: {
+          id: randomUUID(),
           email: validated.email,
           name: validated.name,
           authProvider: 'email',
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
           userId: user.id,
           deviceId: validated.deviceInfo.deviceId,
           deviceName: validated.deviceInfo.deviceName,
-          platform: validated.deviceInfo.platform,
+          platform: validated.deviceInfo.platform as 'IOS' | 'ANDROID',
           osVersion: validated.deviceInfo.osVersion,
           appVersion: validated.deviceInfo.appVersion,
         },
