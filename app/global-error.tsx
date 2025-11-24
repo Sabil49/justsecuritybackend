@@ -8,25 +8,22 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html lang="en">
-      <body>
-        <h2>Something went wrong.</h2>
+    <div style={{ padding: "40px" }}>
+      <h2>Something went wrong.</h2>
+      <p>{error.message}</p>
 
-        <p>{error.message}</p>
-
-        <button
-          onClick={() => reset()}
-          style={{
-            padding: "8px 16px",
-            marginTop: "12px",
-            background: "black",
-            color: "white",
-            borderRadius: "4px",
-          }}
-        >
-          Try again
-        </button>
-      </body>
-    </html>
+      <button
+        onClick={() => reset()}
+        style={{
+          padding: "8px 16px",
+          marginTop: "12px",
+          background: "black",
+          color: "white",
+          borderRadius: "4px",
+        }}
+      >
+        Try again
+      </button>
+    </div>
   );
 }
