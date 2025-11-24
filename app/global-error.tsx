@@ -1,3 +1,4 @@
+"use client";
 export default function GlobalError() {
     return (
         <div style={{ padding: "2rem", textAlign: "center" }}>
