@@ -142,14 +142,14 @@ async function checkAdminStatus(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { email: true, role: true }, // <-- add "role" field in schema
-  });
+  }) as unknown as { email: string; role?: string | null };
 
   if (!user) return false;
 
   const email = user.email.toLowerCase();
 
   // 3. Check DB role (scalable, recommended)
-  if (user.role === 'admin') {
+  if (user.role && user.role.toLowerCase() === 'admin') {
     return true;
   }
 
