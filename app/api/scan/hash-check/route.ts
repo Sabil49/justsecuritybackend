@@ -152,7 +152,9 @@ export async function POST(request: NextRequest) {
         threatsFound,
       },
     });
-  } catch (error) {
+  }
+ }
+ catch (error) {
     console.error('[HASH_CHECK_ERROR]', error);
     
     if (error instanceof z.ZodError) {
@@ -167,4 +169,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}  

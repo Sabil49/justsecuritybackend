@@ -72,17 +72,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // Send push notification to device
-    for (const token of device.pushTokens) {
-     await sendPushNotification(token.token, {
-     commandId: command.id,
-      commandType: validated.commandType,
-     metadata: validated.metadata,
-    });
-    }
     // Normalize metadata (safe for Prisma JSON)
     const metadata: Record<string, unknown> = validated.metadata ?? {};
-    
+
+    // Create the command first so we have an ID to send to the device
     const command = await prisma.antiTheftCommand.create({
       data: {
         deviceId: device.id,
@@ -92,6 +85,15 @@ export async function POST(request: NextRequest) {
         metadata: metadata as InputJsonValue,
       },
     });
+
+    // Send push notification to device
+    for (const token of device.pushTokens) {
+      await sendPushNotification(token.token, {
+        commandId: command.id,
+        commandType: validated.commandType,
+        metadata: validated.metadata,
+      });
+    }
 
     // Telemetry log
     await prisma.telemetryLog.create({
@@ -204,4 +206,5 @@ async function sendPushNotification(
   } catch (err) {
     console.error('[PUSH] Error sending push notification', { err, token, commandId });
   }
+}
 }
