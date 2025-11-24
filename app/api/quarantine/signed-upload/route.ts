@@ -68,7 +68,6 @@ export async function POST(request: NextRequest) {
         userId: user.userId,
         deviceId: quarantine.deviceId,
         fileHash: quarantine.fileHash,
-        threatName: quarantine.threatName,
       },
     });
 

@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         userId: user.userId,
         deviceId: validated.deviceId,
         deviceName: validated.deviceName,
-        platform: validated.platform,
+        platform: validated.platform as 'IOS' | 'ANDROID',
         osVersion: validated.osVersion,
         appVersion: validated.appVersion,
         lastSeen: new Date(),
