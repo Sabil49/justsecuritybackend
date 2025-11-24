@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/**
+ * ===========================
+ * ENUMS (with @map() mapping)
+ * ===========================
+ */
+enum UserRole {
+  USER
+  ADMIN
+  SUPPORT
+  SUPERADMIN
+}
+enum Platform {
+  ANDROID
+  IOS
+}
+enum ThreatType {
+  HASH     @map("hash")
+  PACKAGE  @map("package")
+  URL      @map("url")
+  BEHAVIOR @map("behavior")
+}
+
+enum ThreatSeverity {
+  CRITICAL @map("critical")
+  HIGH     @map("high")
+  MEDIUM   @map("medium")
+  LOW      @map("low")
+}
+
+enum ThreatCategory {
+  MALWARE  @map("malware")
+  SPYWARE  @map("spyware")
+  ADWARE   @map("adware")
+  TROJAN   @map("trojan")
+  PHISHING @map("phishing")
+}
+
+enum QuarantineStatus {
+  QUARANTINED @map("quarantined")
+  RESTORED    @map("restored")
+  DELETED     @map("deleted")
+}
+
+enum AntiTheftCommandType {
+  LOCATE @map("locate")
+  RING   @map("ring")
+  LOCK   @map("lock")
+  WIPE   @map("wipe")
+}
+
+enum CommandStatus {
+  PENDING  @map("pending")
+  SENT     @map("sent")
+  EXECUTED @map("executed")
+  FAILED   @map("failed")
+}
+
+enum AdminAction {
+  THREAT_UPLOAD    @map("threat_upload")
+  USER_BAN         @map("user_ban")
+  SIGNATURE_UPDATE @map("signature_update")
+}
+
+/**
+ * ===========================
+ * MODELS
+ * ===========================
+ */
+
+model User {
+  id             String   @id
+  email          String   @unique
+  name           String?
+  authProvider   String
+  authProviderId String?
+  role           UserRole @default(USER) // <---
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  passwordHash   String?
+
+  devices        Device[]
+  subscriptions  Subscription[]
+  telemetryLogs  TelemetryLog[]
+  adminAuditLogs AdminAuditLog[]
+
+  @@index([email])
+  @@index([authProviderId])
+}
+
+model Device {
+  id         String   @id @default(cuid())
+  userId     String
+  deviceId   String   @unique
+  deviceName String
+  platform   Platform
+  osVersion  String
+  appVersion String
+  lastSeen   DateTime @default(now())
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushTokens        PushToken[]
+  scanLogs          ScanLog[]
+  quarantines       Quarantine[]
+  antiTheftCommands AntiTheftCommand[]
+
+  @@index([userId])
+  @@index([deviceId])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  deviceId  String
+  token     String   @unique
+  platform  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([token])
+}
+
+model ThreatSignature {
+  id          String         @id @default(cuid())
+  type        ThreatType
+  signature   String         @unique
+  threatName  String
+  severity    ThreatSeverity
+  category    ThreatCategory
+  description String?
+  isActive    Boolean        @default(true)
+  version     Int            @default(1)
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  quarantines Quarantine[]
+
+  @@index([signature])
+  @@index([type, isActive])
+  @@index([severity])
+}
+
+model ScanLog {
+  id           String    @id @default(cuid())
+  deviceId     String
+  scanType     String
+  status       String
+  filesScanned Int       @default(0)
+  threatsFound Int       @default(0)
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  duration     Int?
+  metadata     Json?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model Quarantine {
+  id                String           @id @default(cuid())
+  deviceId          String
+  fileName          String
+  filePath          String
+  fileSize          Int
+  fileHash          String
+  severity          ThreatSeverity   @default(MEDIUM)
+  status            QuarantineStatus @default(QUARANTINED)
+  storageKey        String?
+  storageUrl        String?
+  uploadStatus      String?
+  uploadedAt        DateTime?
+  metadata          Json?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  threatSignature   ThreatSignature  @relation(fields: [threatSignatureId], references: [id])
+  threatSignatureId String
+  device            Device           @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([status])
+  @@index([fileHash])
+  @@index([threatSignatureId])
+}
+
+model AntiTheftCommand {
+  id          String               @id @default(cuid())
+  deviceId    String
+  commandType AntiTheftCommandType
+  status      CommandStatus
+  issuedBy    String
+  issuedAt    DateTime             @default(now())
+  executedAt  DateTime?
+  metadata    Json?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([status])
+  @@index([commandType])
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  userId             String
+  tier               String
+  status             String
+  platform           String
+  platformSubId      String?   @unique
+  receiptData        String?   @db.Text
+  trialEndsAt        DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([platformSubId])
+}
+
+model TelemetryLog {
+  id        String   @id @default(cuid())
+  userId    String
+  eventType String
+  eventData Json
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+model AdminAuditLog {
+  id        String      @id @default(cuid())
+  adminId   String
+  action    AdminAction
+  targetId  String?
+  metadata  Json?
+  ipAddress String?
+  timestamp DateTime    @default(now())
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([timestamp])
+}
