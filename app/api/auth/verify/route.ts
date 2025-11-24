@@ -6,6 +6,7 @@ import { createAuthToken } from '@/lib/auth';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
+import { randomUUID } from 'crypto';
 
 interface VerifiedIdentity {
   email: string | null;
@@ -45,13 +46,13 @@ if (!email || !providerId) {
 
     // Upsert user
     const result = await prisma.$transaction(async (tx) => {
-  
   const user = await tx.user.upsert({
     where: { email },
      update: { 
        updatedAt: new Date(),
      },
      create: {
+       id: randomUUID(),
        email,
        name,
        authProvider: validated.provider,
@@ -84,7 +85,7 @@ if (!email || !providerId) {
       userId: user.id,
       deviceId: validated.deviceInfo.deviceId,
       deviceName: validated.deviceInfo.deviceName,
-      platform: validated.deviceInfo.platform,
+      platform: validated.deviceInfo.platform as 'IOS' | 'ANDROID',
       osVersion: validated.deviceInfo.osVersion,
       appVersion: validated.deviceInfo.appVersion,
     },
